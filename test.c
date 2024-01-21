@@ -21,8 +21,8 @@ int main() {
         return 1;
     }
 
-    SOCKET serverSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-    if (serverSocket == INVALID_SOCKET) {
+    SOCKET udpSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if (udpSocket == INVALID_SOCKET) {
         fprintf(stderr, "Error creating socket: %d\n", WSAGetLastError());
         WSACleanup();
         return 1;
@@ -35,7 +35,7 @@ int main() {
     config.TxTimestampsBuffered = 1;
     int error =
         WSAIoctl(
-            serverSocket,
+            udpSocket,
             SIO_TIMESTAMPING,
             &config,
             sizeof(config),
@@ -49,39 +49,56 @@ int main() {
         return -1;
     }
 
-    CHAR data[512];
-    CHAR control[512] = { 0 };
-    WSABUF dataBuf;
-    WSABUF controlBuf;
-    WSAMSG wsaMsg;
-    ULONG64 appLevelTimestamp;
+    struct sockaddr_in localAddress;
+    localAddress.sin_family = AF_INET;
+    localAddress.sin_addr.s_addr = INADDR_ANY;
+    localAddress.sin_port = htons(12345);
 
-    dataBuf.buf = data;
-    dataBuf.len = sizeof(data);
-    controlBuf.buf = control;
-    controlBuf.len = sizeof(control);
-    wsaMsg.name = NULL;
-    wsaMsg.namelen = 0;
-    wsaMsg.lpBuffers = &dataBuf;
-    wsaMsg.dwBufferCount = 1;
-    wsaMsg.Control = controlBuf;
-    wsaMsg.dwFlags = 0;
+    if (bind(udpSocket, (struct sockaddr*)&localAddress, sizeof(localAddress)) == SOCKET_ERROR) {
+        fprintf(stderr, "Failed to bind socket.\n");
+        closesocket(udpSocket);
+        WSACleanup();
+        return 1;
+    }
 
-   error =
-        WSARecvMsg(
-            serverSocket,
-            &wsaMsg,
-            &numBytes,
-            NULL,
-            NULL);
-    if (error == SOCKET_ERROR) {
-        printf("recvmsg failed %d\n", WSAGetLastError());
-        return -1;
+    char buffer[1024];
+    struct sockaddr_in senderAddress;
+    int senderAddressSize = sizeof(senderAddress);
+    struct sockaddr* pSenderAddr = (struct sockaddr*)&senderAddress;
+    WSABUF dataBuffer;
+    dataBuffer.buf = buffer;
+    dataBuffer.len = sizeof(buffer);
+    DWORD flags = 0;
+    FILETIME timestamp;
+
+    int bytesReceived = WSARecvFrom(
+        udpSocket,
+        &dataBuffer,
+        1,
+        NULL,
+        &flags,
+        pSenderAddr,
+        &senderAddressSize,
+        NULL,
+        NULL
+    );
+
+    if (bytesReceived == SOCKET_ERROR) {
+        fprintf(stderr, "Error receiving data: %d\n", WSAGetLastError());
+    } else {
+        printf("made it very far");
+//        if (WSAIoctl(udpSocket, SIO_TIMESTAMP_REQUEST, NULL, 0, &timestamp, sizeof(timestamp), NULL, NULL, NULL) == SOCKET_ERROR) {
+//            fprintf(stderr, "Failed to extract timestamp: %d\n", WSAGetLastError());
+//        } else {
+//            printf("Received %d bytes from %s:%d at timestamp %llu\n", bytesReceived,
+//                   inet_ntoa(senderAddress.sin_addr), ntohs(senderAddress.sin_port),
+//                   ((unsigned long long)(timestamp.dwHighDateTime) << 32 | timestamp.dwLowDateTime));
+//        }
     }
 
     // cleanup
 
-    closesocket(serverSocket);
+    closesocket(udpSocket);
     WSACleanup();
 
     return 0;
