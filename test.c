@@ -141,6 +141,7 @@ int main() {
     while (cmsg != NULL) {
         if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SO_TIMESTAMP) {
             socketTimestamp = *(PUINT64)WSA_CMSG_DATA(cmsg);
+            printf("socket timestamp %lu\n", socketTimestamp);
             retrievedTimestamp = TRUE;
             break;
         }
