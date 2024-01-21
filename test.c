@@ -70,12 +70,13 @@ int main() {
     dataBuffer.len = sizeof(buffer);
     DWORD flags = 0;
     FILETIME timestamp;
+    unsigned int c = 0;
 
     int bytesReceived = WSARecvFrom(
         udpSocket,
         &dataBuffer,
         1,
-        NULL,
+        &c,
         &flags,
         pSenderAddr,
         &senderAddressSize,
