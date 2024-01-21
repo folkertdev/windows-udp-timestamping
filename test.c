@@ -14,8 +14,6 @@ typedef struct _TIMESTAMPING_CONFIG {
 } TIMESTAMPING_CONFIG, *PTIMESTAMPING_CONFIG;
 
 int main() {
-    DWORD numBytes;
-    TIMESTAMPING_CONFIG config = { 0 };
 
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
@@ -30,8 +28,10 @@ int main() {
         return 1;
     }
 
+    DWORD numBytes;
+    TIMESTAMPING_CONFIG config = { 0 };
     // Configure tx timestamp reception.
-    config.Flags |= TIMESTAMPING_FLAG_TX;
+    config.Flags |= TIMESTAMPING_FLAG_RX;
     config.TxTimestampsBuffered = 1;
     int error =
         WSAIoctl(
@@ -49,9 +49,8 @@ int main() {
         return -1;
     }
 
-    INT error;
     CHAR data[512];
-    CHAR control[WSA_CMSG_SPACE(sizeof(UINT32))] = { 0 };
+    CHAR control[512] = { 0 };
     WSABUF dataBuf;
     WSABUF controlBuf;
     WSAMSG wsaMsg;
@@ -61,20 +60,24 @@ int main() {
     dataBuf.len = sizeof(data);
     controlBuf.buf = control;
     controlBuf.len = sizeof(control);
-    wsaMsg.name = (PSOCKADDR)addr;
-    wsaMsg.namelen = (INT)INET_SOCKADDR_LENGTH(addr->ss_family);
+    wsaMsg.name = NULL;
+    wsaMsg.namelen = 0;
     wsaMsg.lpBuffers = &dataBuf;
     wsaMsg.dwBufferCount = 1;
     wsaMsg.Control = controlBuf;
     wsaMsg.dwFlags = 0;
 
-    // Assign a tx timestamp ID to this datagram.
-    UINT32 txTimestampId = 123;
-    PCMSGHDR cmsg = WSA_CMSG_FIRSTHDR(&wsaMsg);
-    cmsg->cmsg_len = WSA_CMSG_LEN(sizeof(UINT32));
-    cmsg->cmsg_level = SOL_SOCKET;
-    cmsg->cmsg_type = SO_TIMESTAMP_ID;
-    *(PUINT32)WSA_CMSG_DATA(cmsg) = txTimestampId;
+   error =
+        recvmsg(
+            sock,
+            &wsaMsg,
+            &numBytes,
+            NULL,
+            NULL);
+    if (error == SOCKET_ERROR) {
+        printf("recvmsg failed %d\n", WSAGetLastError());
+        return;
+    }
 
     // cleanup
 
