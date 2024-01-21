@@ -3,6 +3,7 @@
 #include <mswsock.h>
 #include <mstcpip.h>
 #include <ws2def.h>
+#include <iphlpapi.h>
 
 #pragma comment(lib, "ws2_32.lib")
 
@@ -16,6 +17,12 @@ typedef struct _TIMESTAMPING_CONFIG {
   ULONG  Flags;
   USHORT TxTimestampsBuffered;
 } TIMESTAMPING_CONFIG, *PTIMESTAMPING_CONFIG;
+
+typedef struct _INTERFACE_HARDWARE_CROSSTIMESTAMP {
+  ULONG64 SystemTimestamp1;
+  ULONG64 HardwareClockTimestamp;
+  ULONG64 SystemTimestamp2;
+} INTERFACE_HARDWARE_CROSSTIMESTAMP, *PINTERFACE_HARDWARE_CROSSTIMESTAMP;
 
 static LPFN_WSARECVMSG getwsarecvmsg()
 {
@@ -43,6 +50,8 @@ static LPFN_WSARECVMSG getwsarecvmsg()
 
 
 int main() {
+    // TODO what does this do?
+    BOOL hardwareTimestampSource = 0;
 
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
@@ -133,6 +142,25 @@ int main() {
         return -1;
     }
 
+    ULONG64 appLevelTimestamp;
+
+    // Capture app-layer timestamp upon message reception.
+    if (hardwareTimestampSource) {
+//        INTERFACE_HARDWARE_CROSSTIMESTAMP crossTimestamp = { 0 };
+//        crossTimestamp.Version = INTERFACE_HARDWARE_CROSSTIMESTAMP_VERSION_1;
+//        error = CaptureInterfaceHardwareCrossTimestamp(interfaceLuid, &crossTimestamp);
+//        if (error != NO_ERROR) {
+//            printf("CaptureInterfaceHardwareCrossTimestamp failed %d\n", error);
+//            return;
+//        }
+//        appLevelTimestamp = crossTimestamp.HardwareClockTimestamp;
+    }
+    else { // software source
+        LARGE_INTEGER t1;
+        QueryPerformanceCounter(&t1);
+        appLevelTimestamp = t1.QuadPart;
+    }
+
     // Look for socket rx timestamp returned via control message.
     BOOLEAN retrievedTimestamp = FALSE;
     WSACMSGHDR *cmsg = WSA_CMSG_FIRSTHDR(&wsaMsg);
@@ -143,7 +171,7 @@ int main() {
             socketTimestamp = *(PUINT64)WSA_CMSG_DATA(cmsg);
             printf("socket timestamp %lu\n", socketTimestamp);
             retrievedTimestamp = TRUE;
-            break;
+            // break;
         }
         cmsg = WSA_CMSG_NXTHDR(&wsaMsg, cmsg);
     }
@@ -151,9 +179,6 @@ int main() {
 
     printf("got very far %d", retrievedTimestamp);
 
-    // TODO what does this do?
-    int hardwareTimestampSource = 0;
-    ULONG64 appLevelTimestamp;
 
     if (retrievedTimestamp) {
         // Compute socket receive path latency.
