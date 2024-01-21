@@ -2,10 +2,12 @@
 #include <winsock2.h>
 #include <mswsock.h>
 #include <mstcpip.h>
+#include <ws2def.h>
 
 #pragma comment(lib, "ws2_32.lib")
 
 #define SIO_TIMESTAMPING 2550137067u
+#define SO_TIMESTAMP 0x300A
 
 #define TIMESTAMPING_FLAG_RX 1u;
 #define TIMESTAMPING_FLAG_TX 2u;
@@ -131,7 +133,21 @@ int main() {
         return -1;
     }
 
-    printf("got very far");
+    // Look for socket rx timestamp returned via control message.
+    BOOLEAN retrievedTimestamp = FALSE;
+    WSACMSGHDR *cmsg = WSA_CMSG_FIRSTHDR(&wsaMsg);
+    UINT64 socketTimestamp = 0;
+
+    while (cmsg != NULL) {
+        if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SO_TIMESTAMP) {
+            socketTimestamp = *(PUINT64)WSA_CMSG_DATA(cmsg);
+            retrievedTimestamp = TRUE;
+            break;
+        }
+        cmsg = WSA_CMSG_NXTHDR(&wsaMsg, cmsg);
+    }
+
+    printf("got very far %d", retrievedTimestamp);
 
     // cleanup
 
