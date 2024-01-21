@@ -49,36 +49,34 @@ int main() {
         return -1;
     }
 
-    struct sockaddr_in serverAddr;
-    serverAddr.sin_family = AF_INET;
-    serverAddr.sin_addr.s_addr = INADDR_ANY;
-    serverAddr.sin_port = htons(12345);
+    INT error;
+    CHAR data[512];
+    CHAR control[WSA_CMSG_SPACE(sizeof(UINT32))] = { 0 };
+    WSABUF dataBuf;
+    WSABUF controlBuf;
+    WSAMSG wsaMsg;
+    ULONG64 appLevelTimestamp;
 
-    if (bind(serverSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR) {
-        fprintf(stderr, "Bind failed with error: %d\n", WSAGetLastError());
-        closesocket(serverSocket);
-        WSACleanup();
-        return 1;
-    }
+    dataBuf.buf = data;
+    dataBuf.len = sizeof(data);
+    controlBuf.buf = control;
+    controlBuf.len = sizeof(control);
+    wsaMsg.name = (PSOCKADDR)addr;
+    wsaMsg.namelen = (INT)INET_SOCKADDR_LENGTH(addr->ss_family);
+    wsaMsg.lpBuffers = &dataBuf;
+    wsaMsg.dwBufferCount = 1;
+    wsaMsg.Control = controlBuf;
+    wsaMsg.dwFlags = 0;
 
-    printf("UDP Server is listening on port 12345...\n");
+    // Assign a tx timestamp ID to this datagram.
+    UINT32 txTimestampId = 123;
+    PCMSGHDR cmsg = WSA_CMSG_FIRSTHDR(&wsaMsg);
+    cmsg->cmsg_len = WSA_CMSG_LEN(sizeof(UINT32));
+    cmsg->cmsg_level = SOL_SOCKET;
+    cmsg->cmsg_type = SO_TIMESTAMP_ID;
+    *(PUINT32)WSA_CMSG_DATA(cmsg) = txTimestampId;
 
-    while (1) {
-        char buffer[1024];
-        struct sockaddr_in clientAddr;
-        int clientAddrLen = sizeof(clientAddr);
-        int bytesReceived = recvfrom(serverSocket, buffer, sizeof(buffer), 0, (struct sockaddr*)&clientAddr, &clientAddrLen);
-
-        if (bytesReceived == SOCKET_ERROR) {
-            fprintf(stderr, "recvfrom failed with error: %d\n", WSAGetLastError());
-            continue;
-        }
-
-        // Process the received data and timestamps
-
-        buffer[bytesReceived] = '\0';
-        printf("Received from %s:%d - %s\n", inet_ntoa(clientAddr.sin_addr), ntohs(clientAddr.sin_port), buffer);
-    }
+    // cleanup
 
     closesocket(serverSocket);
     WSACleanup();
