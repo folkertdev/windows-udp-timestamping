@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <winsock2.h>
+#include <mswsock.h>
+#include <mstcpip.h>
 
 #pragma comment(lib, "ws2_32.lib")
 
@@ -12,6 +14,31 @@ typedef struct _TIMESTAMPING_CONFIG {
   ULONG  Flags;
   USHORT TxTimestampsBuffered;
 } TIMESTAMPING_CONFIG, *PTIMESTAMPING_CONFIG;
+
+static LPFN_WSARECVMSG getwsarecvmsg()
+{
+    LPFN_WSARECVMSG lpfnWSARecvMsg = NULL;
+    GUID guidWSARecvMsg = WSAID_WSARECVMSG;
+    SOCKET sock = INVALID_SOCKET;
+    DWORD dwBytes = 0;
+    sock = socket(AF_INET6, SOCK_DGRAM, 0);
+    if (SOCKET_ERROR == WSAIoctl(sock,
+                    SIO_GET_EXTENSION_FUNCTION_POINTER,
+                    &guidWSARecvMsg,
+                    sizeof(guidWSARecvMsg),
+                    &lpfnWSARecvMsg,
+                    sizeof(lpfnWSARecvMsg),
+                    &dwBytes,
+                    NULL,
+                    NULL
+            ))
+    {
+        return NULL;
+    }
+    // safe_close_soket(sock);
+    return lpfnWSARecvMsg;
+}
+
 
 int main() {
 
@@ -71,6 +98,8 @@ int main() {
     DWORD flags = 0;
     FILETIME timestamp;
     unsigned int c = 0;
+
+    LPFN_WSARECVMSG recvmsg = getwsarecvmsg();
 
     int bytesReceived = WSARecvFrom(
         udpSocket,
