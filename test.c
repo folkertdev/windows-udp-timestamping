@@ -68,15 +68,15 @@ int main() {
     wsaMsg.dwFlags = 0;
 
    error =
-        recvmsg(
-            sock,
+        WSARecvMsg(
+            serverSocket,
             &wsaMsg,
             &numBytes,
             NULL,
             NULL);
     if (error == SOCKET_ERROR) {
         printf("recvmsg failed %d\n", WSAGetLastError());
-        return;
+        return -1;
     }
 
     // cleanup
