@@ -101,30 +101,37 @@ int main() {
 
     LPFN_WSARECVMSG recvmsg = getwsarecvmsg();
 
-    int bytesReceived = WSARecvFrom(
-        udpSocket,
-        &dataBuffer,
-        1,
-        &c,
-        &flags,
-        pSenderAddr,
-        &senderAddressSize,
-        NULL,
-        NULL
-    );
+    CHAR data[512];
+    WSABUF dataBuf;
+    CHAR control[WSA_CMSG_SPACE(sizeof(UINT64))] = { 0 };
+    // CHAR control[512] = { 0 };
+    WSAMSG wsaMsg;
+    WSABUF controlBuf;
 
-    if (bytesReceived == SOCKET_ERROR) {
-        fprintf(stderr, "Error receiving data: %d\n", WSAGetLastError());
-    } else {
-        printf("made it very far");
-//        if (WSAIoctl(udpSocket, SIO_TIMESTAMP_REQUEST, NULL, 0, &timestamp, sizeof(timestamp), NULL, NULL, NULL) == SOCKET_ERROR) {
-//            fprintf(stderr, "Failed to extract timestamp: %d\n", WSAGetLastError());
-//        } else {
-//            printf("Received %d bytes from %s:%d at timestamp %llu\n", bytesReceived,
-//                   inet_ntoa(senderAddress.sin_addr), ntohs(senderAddress.sin_port),
-//                   ((unsigned long long)(timestamp.dwHighDateTime) << 32 | timestamp.dwLowDateTime));
-//        }
+    dataBuf.buf = data;
+    dataBuf.len = sizeof(data);
+    controlBuf.buf = control;
+    controlBuf.len = sizeof(control);
+    wsaMsg.name = NULL;
+    wsaMsg.namelen = 0;
+    wsaMsg.lpBuffers = &dataBuf;
+    wsaMsg.dwBufferCount = 1;
+    wsaMsg.Control = controlBuf;
+    wsaMsg.dwFlags = 0;
+
+    error =
+        recvmsg(
+            udpSocket,
+            &wsaMsg,
+            &numBytes,
+            NULL,
+            NULL);
+    if (error == SOCKET_ERROR) {
+        printf("recvmsg failed %d\n", WSAGetLastError());
+        return -1;
     }
+
+    printf("got very far");
 
     // cleanup
 
