@@ -69,8 +69,8 @@ int main() {
     DWORD numBytes;
     TIMESTAMPING_CONFIG config = { 0 };
     // Configure tx timestamp reception.
-    config.Flags |= TIMESTAMPING_FLAG_RX;
-    config.TxTimestampsBuffered = 1;
+    config.Flags |= (TIMESTAMPING_FLAG_RX | TIMESTAMPING_FLAG_TX);
+    config.TxTimestampsBuffered = 5;
     int error =
         WSAIoctl(
             udpSocket,
