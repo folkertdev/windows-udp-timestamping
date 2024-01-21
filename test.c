@@ -5,7 +5,18 @@
 
 #define SIO_TIMESTAMPING 2550137067u
 
+#define TIMESTAMPING_FLAG_RX 1u;
+#define TIMESTAMPING_FLAG_TX 2u;
+
+typedef struct _TIMESTAMPING_CONFIG {
+  ULONG  Flags;
+  USHORT TxTimestampsBuffered;
+} TIMESTAMPING_CONFIG, *PTIMESTAMPING_CONFIG;
+
 int main() {
+    DWORD numBytes;
+    TIMESTAMPING_CONFIG config = { 0 };
+
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
         fprintf(stderr, "WSAStartup failed\n");
@@ -19,13 +30,23 @@ int main() {
         return 1;
     }
 
-    // Set SIO_TIMESTAMPING option
-    DWORD enableTimestamping = 1;
-    if (WSAIoctl(serverSocket, SIO_TIMESTAMPING, &enableTimestamping, sizeof(enableTimestamping), NULL, 0, NULL, NULL, NULL) != 0) {
-        fprintf(stderr, "WSAIoctl failed with error: %d\n", WSAGetLastError());
-        closesocket(serverSocket);
-        WSACleanup();
-        return 1;
+    // Configure tx timestamp reception.
+    config.Flags |= TIMESTAMPING_FLAG_TX;
+    config.TxTimestampsBuffered = 1;
+    int error =
+        WSAIoctl(
+            serverSocket,
+            SIO_TIMESTAMPING,
+            &config,
+            sizeof(config),
+            NULL,
+            0,
+            &numBytes,
+            NULL,
+            NULL);
+    if (error == SOCKET_ERROR) {
+        printf("WSAIoctl failed %d\n", WSAGetLastError());
+        return -1;
     }
 
     struct sockaddr_in serverAddr;
