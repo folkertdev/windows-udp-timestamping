@@ -147,7 +147,34 @@ int main() {
         cmsg = WSA_CMSG_NXTHDR(&wsaMsg, cmsg);
     }
 
+
     printf("got very far %d", retrievedTimestamp);
+
+    // TODO what does this do?
+    int hardwareTimestampSource = 0;
+    ULONG64 appLevelTimestamp;
+
+    if (retrievedTimestamp) {
+        // Compute socket receive path latency.
+        LARGE_INTEGER clockFrequency;
+        ULONG64 elapsedMicroseconds;
+
+        if (hardwareTimestampSource) {
+            // QueryHardwareClockFrequency(&clockFrequency);
+        } else { // software source
+            QueryPerformanceFrequency(&clockFrequency);
+        }
+
+        // Compute socket send path latency.
+        elapsedMicroseconds = appLevelTimestamp - socketTimestamp;
+        elapsedMicroseconds *= 1000000;
+        elapsedMicroseconds /= clockFrequency.QuadPart;
+        printf("RX latency estimation: %lld microseconds\n",
+            elapsedMicroseconds);
+    }
+    else {
+        printf("failed to retrieve RX timestamp\n");
+    }
 
     // cleanup
 
