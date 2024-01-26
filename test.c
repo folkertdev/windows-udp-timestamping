@@ -71,6 +71,12 @@ int main() {
     localAddress.sin_addr.s_addr = INADDR_ANY;
     localAddress.sin_port = htons(12345);
 
+    int enableTimestamp = 1;
+    if (setsockopt(udpSocket, SOL_SOCKET, SO_TIMESTAMP, (char*)&enableTimestamp, sizeof(enableTimestamp)) == SOCKET_ERROR) {
+        printf("setsockopt SO_TIMESTAMP failed\n");
+        // Handle the error
+    }
+
     if (bind(udpSocket, (struct sockaddr*)&localAddress, sizeof(localAddress)) == SOCKET_ERROR) {
         fprintf(stderr, "Failed to bind socket.\n");
         closesocket(udpSocket);
@@ -78,32 +84,27 @@ int main() {
         return 1;
     }
 
-    int enableTimestamp = 1;
-    if (setsockopt(udpSocket, SOL_SOCKET, SO_TIMESTAMP, (char*)&enableTimestamp, sizeof(enableTimestamp)) == SOCKET_ERROR) {
-        printf("setsockopt SO_TIMESTAMP failed\n");
-        // Handle the error
-    }
 
-    DWORD numBytes;
-    TIMESTAMPING_CONFIG config = { 0 };
-    // Configure tx timestamp reception.
-    config.Flags |= TIMESTAMPING_FLAG_RX;
-    config.TxTimestampsBuffered = 5;
-    int error =
-        WSAIoctl(
-            udpSocket,
-            SIO_TIMESTAMPING,
-            &config,
-            sizeof(config),
-            NULL,
-            0,
-            &numBytes,
-            NULL,
-            NULL);
-    if (error == SOCKET_ERROR) {
-        printf("WSAIoctl failed %d\n", WSAGetLastError());
-        return -1;
-    }
+//    DWORD numBytes;
+//    TIMESTAMPING_CONFIG config = { 0 };
+//    // Configure tx timestamp reception.
+//    config.Flags |= TIMESTAMPING_FLAG_RX;
+//    config.TxTimestampsBuffered = 5;
+//    int error =
+//        WSAIoctl(
+//            udpSocket,
+//            SIO_TIMESTAMPING,
+//            &config,
+//            sizeof(config),
+//            NULL,
+//            0,
+//            &numBytes,
+//            NULL,
+//            NULL);
+//    if (error == SOCKET_ERROR) {
+//        printf("WSAIoctl failed %d\n", WSAGetLastError());
+//        return -1;
+//    }
 
     char buffer[1024];
     struct sockaddr_in senderAddress;
