@@ -72,6 +72,7 @@ int main() {
     localAddress.sin_port = htons(12345);
 
     int error;
+    DWORD numBytes;
     int enableTimestamp = 1;
     if (setsockopt(udpSocket, SOL_SOCKET, SO_TIMESTAMP, (char*)&enableTimestamp, sizeof(enableTimestamp)) == SOCKET_ERROR) {
         printf("setsockopt SO_TIMESTAMP failed\n");
@@ -86,7 +87,6 @@ int main() {
     }
 
 
-//    DWORD numBytes;
 //    TIMESTAMPING_CONFIG config = { 0 };
 //    // Configure tx timestamp reception.
 //    config.Flags |= TIMESTAMPING_FLAG_RX;
