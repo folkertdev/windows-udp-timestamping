@@ -75,8 +75,8 @@ int main() {
     DWORD numBytes;
     int enableTimestamp = 1;
     if (setsockopt(udpSocket, SOL_SOCKET, SO_TIMESTAMP, (char*)&enableTimestamp, sizeof(enableTimestamp)) == SOCKET_ERROR) {
-        printf("setsockopt SO_TIMESTAMP failed\n");
-        // Handle the error
+        printf("setsockopt SO_TIMESTAMP failed %d\n", WSAGetLastError());
+        return -1;
     }
 
     if (bind(udpSocket, (struct sockaddr*)&localAddress, sizeof(localAddress)) == SOCKET_ERROR) {
