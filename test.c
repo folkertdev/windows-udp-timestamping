@@ -69,7 +69,7 @@ int main() {
     DWORD numBytes;
     TIMESTAMPING_CONFIG config = { 0 };
     // Configure tx timestamp reception.
-    config.Flags |= (TIMESTAMPING_FLAG_RX | TIMESTAMPING_FLAG_TX);
+    config.Flags |= TIMESTAMPING_FLAG_RX;
     config.TxTimestampsBuffered = 5;
     int error =
         WSAIoctl(
@@ -169,6 +169,7 @@ int main() {
     while (cmsg != NULL) {
         printf("cmsg level = %d, type = %d\n", cmsg->cmsg_level, cmsg->cmsg_type);
         if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SO_TIMESTAMP) {
+            printf("cmsg_len = %d\n", cmsg->cmsg_len);
             socketTimestamp = *(PUINT64)WSA_CMSG_DATA(cmsg);
             printf("socket timestamp %lu\n", socketTimestamp);
             retrievedTimestamp = TRUE;
