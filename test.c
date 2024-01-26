@@ -179,6 +179,11 @@ int main() {
             printf("word %d\n", *ptr++);
             socketTimestamp = *(PUINT64)WSA_CMSG_DATA(cmsg);
             printf("socket timestamp %lu\n", socketTimestamp);
+
+            FILETIME* timestamp = (FILETIME*)WSA_CMSG_DATA(cmsg);
+            printf("low timestamp %lu\n", timestamp->dwLowDateTime);
+            printf("high timestamp %lu\n", timestamp->dwHighDateTime);
+
             retrievedTimestamp = TRUE;
             // break;
         }
