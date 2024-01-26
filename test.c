@@ -71,6 +71,7 @@ int main() {
     localAddress.sin_addr.s_addr = INADDR_ANY;
     localAddress.sin_port = htons(12345);
 
+    int error;
     int enableTimestamp = 1;
     if (setsockopt(udpSocket, SOL_SOCKET, SO_TIMESTAMP, (char*)&enableTimestamp, sizeof(enableTimestamp)) == SOCKET_ERROR) {
         printf("setsockopt SO_TIMESTAMP failed\n");
