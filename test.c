@@ -71,19 +71,20 @@ int main() {
     localAddress.sin_addr.s_addr = INADDR_ANY;
     localAddress.sin_port = htons(12345);
 
-    int error;
-    DWORD numBytes;
-    int enableTimestamp = 1;
-    if (setsockopt(udpSocket, SOL_SOCKET, SO_TIMESTAMP, (char*)&enableTimestamp, sizeof(enableTimestamp)) == SOCKET_ERROR) {
-        printf("setsockopt SO_TIMESTAMP failed %d\n", WSAGetLastError());
-        return -1;
-    }
 
     if (bind(udpSocket, (struct sockaddr*)&localAddress, sizeof(localAddress)) == SOCKET_ERROR) {
         fprintf(stderr, "Failed to bind socket.\n");
         closesocket(udpSocket);
         WSACleanup();
         return 1;
+    }
+
+    int error;
+    DWORD numBytes;
+    int enableTimestamp = 1;
+    if (setsockopt(udpSocket, SOL_SOCKET, SO_TIMESTAMP, (char*)&enableTimestamp, sizeof(enableTimestamp)) == SOCKET_ERROR) {
+        printf("setsockopt SO_TIMESTAMP failed %d\n", WSAGetLastError());
+        return -1;
     }
 
 
