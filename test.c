@@ -170,6 +170,13 @@ int main() {
         printf("cmsg level = %d, type = %d\n", cmsg->cmsg_level, cmsg->cmsg_type);
         if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SO_TIMESTAMP) {
             printf("cmsg_len = %d\n", cmsg->cmsg_len);
+            int *ptr = &cmsg->cmsg_level;
+            printf("word %d\n", *ptr++);
+            printf("word %d\n", *ptr++);
+            printf("word %d\n", *ptr++);
+            printf("word %d\n", *ptr++);
+            printf("word %d\n", *ptr++);
+            printf("word %d\n", *ptr++);
             socketTimestamp = *(PUINT64)WSA_CMSG_DATA(cmsg);
             printf("socket timestamp %lu\n", socketTimestamp);
             retrievedTimestamp = TRUE;
